@@ -3,6 +3,8 @@ export type Clinic = {
   name: string;
   address?: string;
   phone?: string;
+  rating?: number;
+  openingHours?: string;
   isOpen24Hours?: boolean;
   acceptsExoticPets?: boolean;
 };

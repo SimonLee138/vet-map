@@ -1,20 +1,16 @@
 import type { Href } from 'expo-router';
 import {
-    TabList,
-    TabListProps,
-    Tabs,
-    TabSlot,
-    TabTrigger,
-    TabTriggerSlotProps,
+  TabList,
+  TabListProps,
+  Tabs,
+  TabSlot,
+  TabTrigger,
+  TabTriggerSlotProps,
 } from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
+import { PawPrint, Search, UserRound } from 'lucide-react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   return (
@@ -38,43 +34,38 @@ export default function AppTabs() {
 }
 
 export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+  const Icon =
+    children === 'Search'
+      ? Search
+      : children === 'Pet Pass'
+        ? PawPrint
+        : UserRound;
+
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+    <Pressable {...props} style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
+      <View style={styles.tabButtonView}>
+        <Icon
+          size={20}
+          strokeWidth={isFocused ? 2.5 : 2}
+          color={isFocused ? '#3676e8' : '#a8b7c9'}
+        />
+        <ThemedText
+          type="small"
+          themeColor={isFocused ? 'text' : 'textSecondary'}
+          style={isFocused ? styles.activeLabel : styles.inactiveLabel}>
           {children}
         </ThemedText>
-      </ThemedView>
+      </View>
     </Pressable>
   );
 }
 
 export function CustomTabList(props: TabListProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
-        </ThemedText>
-
+      <View style={styles.innerContainer}>
         {props.children}
-
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
-      </ThemedView>
+      </View>
     </View>
   );
 }
@@ -82,38 +73,47 @@ export function CustomTabList(props: TabListProps) {
 const styles = StyleSheet.create({
   tabListContainer: {
     position: 'absolute',
+    bottom: 0,
     width: '100%',
-    padding: Spacing.three,
+    paddingBottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#e7edf4',
   },
   innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    flexGrow: 1,
-    gap: Spacing.two,
-    maxWidth: MaxContentWidth,
+    justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: 560,
+    borderRadius: 0,
+    backgroundColor: '#ffffff',
   },
-  brandText: {
-    marginRight: 'auto',
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
   },
   pressed: {
     opacity: 0.7,
   },
   tabButtonView: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 0,
     alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
+    gap: 3,
+  },
+  activeLabel: {
+    color: '#3676e8',
+    fontWeight: '700',
+  },
+  inactiveLabel: {
+    color: '#8493a6',
   },
 });

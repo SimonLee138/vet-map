@@ -26,6 +26,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Vet Map to use your location to find nearby clinics."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",

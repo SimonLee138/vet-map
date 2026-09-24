@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -8,7 +8,7 @@ export default function NotFoundScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">Page not found</ThemedText>
-      <Link href="/index">Return home</Link>
+      <Link href={'/' as Href}>Return home</Link>
     </ThemedView>
   );
 }
