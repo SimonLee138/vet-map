@@ -10,11 +10,14 @@ export function MapView({
   location,
   permissionStatus,
   clinics,
+  selectedClinicId: _selectedClinicId,
   onClinicSelect,
 }: {
   location: Coordinates | null;
   permissionStatus: PermissionStatus;
   clinics: MappedClinic[];
+  selectedClinicId?: string;
+  onRelocate?: () => void;
   onClinicSelect?: (clinic: Clinic) => void;
 }) {
   const permissionLabel =

@@ -48,30 +48,16 @@ export function useLocation() {
   }, []);
 
   useEffect(() => {
-    let subscription: Location.LocationSubscription | null = null;
-
-    async function watchLocation() {
-      await refresh();
+    async function checkPermission() {
       const permission = await Location.getForegroundPermissionsAsync();
-      if (!permission.granted) return;
-
-      subscription = await Location.watchPositionAsync(
-        { distanceInterval: 25, timeInterval: 10000 },
-        (next) =>
-          setState({
-            location: {
-              latitude: next.coords.latitude,
-              longitude: next.coords.longitude,
-            },
-            error: null,
-            permissionStatus: 'granted',
-          }),
-      );
+      setState((current) => ({
+        ...current,
+        permissionStatus: permission.granted ? 'granted' : 'denied',
+      }));
     }
 
-    void watchLocation();
-    return () => subscription?.remove();
-  }, [refresh]);
+    void checkPermission();
+  }, []);
 
   return { location, error, permissionStatus, refresh };
 }

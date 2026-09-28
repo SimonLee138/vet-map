@@ -6,5 +6,5 @@ export type Clinic = {
   rating?: number;
   openingHours?: string;
   isOpen24Hours?: boolean;
-  acceptsExoticPets?: boolean;
+  acceptsExoticPets: boolean;
 };

@@ -16,6 +16,7 @@ export const clinics: MappedClinic[] = [
     phone: '+852 2345 6789',
     openingHours: 'Open daily, 9:00 AM - 9:00 PM',
     isOpen24Hours: false,
+    acceptsExoticPets: true,
   },
   {
     id: 'central-animal-hospital',
@@ -27,6 +28,7 @@ export const clinics: MappedClinic[] = [
     phone: '+852 2123 4567',
     openingHours: 'Open daily, 8:00 AM - 10:00 PM',
     isOpen24Hours: false,
+    acceptsExoticPets: false,
   },
   {
     id: 'petcare-247',
@@ -38,6 +40,7 @@ export const clinics: MappedClinic[] = [
     phone: '+852 2987 6543',
     openingHours: 'Open 24 hours',
     isOpen24Hours: true,
+    acceptsExoticPets: false,
   },
   {
     id: 'happy-paws-veterinary-clinic',
@@ -49,5 +52,6 @@ export const clinics: MappedClinic[] = [
     phone: '+852 2678 9012',
     openingHours: 'Open weekdays, 9:00 AM - 8:00 PM',
     isOpen24Hours: false,
+    acceptsExoticPets: true,
   },
 ];

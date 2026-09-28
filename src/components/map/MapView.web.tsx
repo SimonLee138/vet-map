@@ -10,12 +10,19 @@ type MapViewProps = {
   location: Coordinates | null;
   permissionStatus: PermissionStatus;
   clinics: MappedClinic[];
+  selectedClinicId?: string;
   onClinicSelect?: (clinic: Clinic) => void;
 };
 
 const DEFAULT_CENTER: [number, number] = [22.339347563319834, 114.15269326513197];
 
-export function MapView({ location, permissionStatus, clinics, onClinicSelect }: MapViewProps) {
+export function MapView({
+  location,
+  permissionStatus,
+  clinics,
+  selectedClinicId,
+  onClinicSelect,
+}: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<CircleMarker | null>(null);
@@ -31,6 +38,22 @@ export function MapView({ location, permissionStatus, clinics, onClinicSelect }:
       if (cancelled || !containerRef.current) return;
 
       const map = leaflet.map(containerRef.current).setView(DEFAULT_CENTER, 13);
+      const relocateControl = new leaflet.Control({ position: 'topright' });
+      relocateControl.onAdd = () => {
+        const button = leaflet.DomUtil.create('button', 'leaflet-relocate-button');
+        button.type = 'button';
+        button.title = 'Relocate to current position';
+        button.setAttribute('aria-label', 'Relocate to current position');
+        button.innerHTML = 'Locate';
+        button.style.cssText =
+          'padding:8px 10px;border:1px solid #c8ced6;border-radius:6px;background:#fff;color:#176b87;font-weight:600;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.18)';
+        leaflet.DomEvent.disableClickPropagation(button);
+        leaflet.DomEvent.on(button, 'click', () => {
+          map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true });
+        });
+        return button;
+      };
+      relocateControl.addTo(map);
       leaflet
         .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors',
@@ -57,6 +80,7 @@ export function MapView({ location, permissionStatus, clinics, onClinicSelect }:
     void createMap();
     return () => {
       cancelled = true;
+      mapRef.current?.stopLocate();
       mapRef.current?.remove();
       mapRef.current = null;
       clinicMarkersRef.current = [];
@@ -82,6 +106,14 @@ export function MapView({ location, permissionStatus, clinics, onClinicSelect }:
       mapRef.current.flyTo(coordinates, 15, { duration: 1 });
     });
   }, [location, mapReady]);
+
+  useEffect(() => {
+    if (!selectedClinicId || !mapReady || !mapRef.current) return;
+    const clinic = clinics.find((item) => item.id === selectedClinicId);
+    if (!clinic) return;
+
+    mapRef.current.flyTo([clinic.latitude, clinic.longitude], 16, { duration: 1 });
+  }, [clinics, mapReady, selectedClinicId]);
 
   const permissionLabel =
     permissionStatus === 'granted'

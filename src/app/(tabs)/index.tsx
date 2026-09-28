@@ -1,3 +1,4 @@
+import { X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -11,12 +12,12 @@ import { useLocation } from '@/hooks/useLocation';
 import type { Clinic } from '@/types/clinic';
 
 export default function SearchScreen() {
-  const { location, error, permissionStatus, refresh } = useLocation();
+  const { location, error, permissionStatus } = useLocation();
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [searchText, setSearchText] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const filterOptions = ['24 hours', 'Open now'];
+  const filterOptions = ['24 hours', 'Open now', 'Exotic animals'];
   const filteredSuggestions = useMemo(() => {
     const query = searchText.trim().toLowerCase();
     return clinics.filter((clinic) => {
@@ -24,7 +25,8 @@ export default function SearchScreen() {
         !query || `${clinic.name} ${clinic.address ?? ''}`.toLowerCase().includes(query);
       const matchesFilters =
         (!selectedFilters.includes('24 hours') || clinic.isOpen24Hours) &&
-        (!selectedFilters.includes('Open now') || clinic.isOpen24Hours || clinic.openingHours?.includes('Open'));
+        (!selectedFilters.includes('Open now') || clinic.isOpen24Hours || clinic.openingHours?.includes('Open')) &&
+        (!selectedFilters.includes('Exotic animals') || clinic.acceptsExoticPets);
       return matchesSearch && matchesFilters;
     });
   }, [searchText, selectedFilters]);
@@ -38,28 +40,33 @@ export default function SearchScreen() {
           style={styles.dismissLayer}
         />
       )}
-      <ThemedView style={styles.header}>
-        <ThemedView>
-          <ThemedText type="title">Find a vet</ThemedText>
-          <ThemedText themeColor="textSecondary">Search nearby veterinary clinics.</ThemedText>
-        </ThemedView>
-        <Pressable onPress={() => void refresh()} style={styles.locateButton}>
-          <ThemedText style={styles.locateText}>Locate me</ThemedText>
-        </Pressable>
-      </ThemedView>
       <View style={styles.searchSection}>
-        <TextInput
-          value={searchText}
-          onChangeText={(text) => {
-            setSearchText(text);
-            setIsDropdownOpen(true);
-          }}
-          onFocus={() => setIsDropdownOpen(true)}
-          placeholder="Search clinics or areas"
-          placeholderTextColor="#7b8490"
-          style={styles.searchInput}
-          accessibilityLabel="Search veterinary clinics"
-        />
+        <View style={styles.searchInputContainer}>
+          <TextInput
+            value={searchText}
+            onChangeText={(text) => {
+              setSearchText(text);
+              setIsDropdownOpen(true);
+            }}
+            onFocus={() => setIsDropdownOpen(true)}
+            placeholder="Search clinics or areas"
+            placeholderTextColor="#7b8490"
+            style={styles.searchInput}
+            accessibilityLabel="Search veterinary clinics"
+          />
+          {searchText.length > 0 && (
+            <Pressable
+              accessibilityLabel="Clear clinic search"
+              onPress={() => {
+                setSearchText('');
+                setIsDropdownOpen(true);
+              }}
+              hitSlop={8}
+              style={({ pressed }) => [styles.clearButton, pressed && styles.pressed]}>
+              <X size={18} color="#718096" strokeWidth={2.5} />
+            </Pressable>
+          )}
+        </View>
         {isDropdownOpen && (
           <View style={styles.dropdown}>
             {filteredSuggestions.length > 0 ? (
@@ -101,7 +108,8 @@ export default function SearchScreen() {
         <MapView
           location={location}
           permissionStatus={permissionStatus}
-          clinics={clinics}
+          clinics={filteredSuggestions}
+          selectedClinicId={selectedClinic?.id}
           onClinicSelect={setSelectedClinic}
         />
       </ThemedView>
@@ -114,19 +122,27 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, gap: 16, padding: 24, position: 'relative' },
   dismissLayer: { ...StyleSheet.absoluteFill, zIndex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
-  locateButton: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: '#176b87' },
-  locateText: { color: '#fff', fontWeight: '600' },
   searchSection: { position: 'relative', zIndex: 2 },
-  searchInput: {
-    height: 48,
-    paddingHorizontal: 16,
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#c8ced6',
     borderRadius: 10,
     backgroundColor: '#fff',
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    paddingHorizontal: 16,
     color: '#17202a',
     fontSize: 16,
+  },
+  clearButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dropdown: {
     position: 'absolute',
