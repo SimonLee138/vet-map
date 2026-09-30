@@ -7,10 +7,12 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+export const PageCanvasColor = '#f4f7f5';
+
 export const Colors = {
   light: {
     text: '#000000',
-    background: '#ffffff',
+    background: PageCanvasColor,
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
@@ -40,7 +42,7 @@ export const Fonts = Platform.select({
   default: {
     sans: 'normal',
     serif: 'serif',
-    rounded: 'normal',
+    rounded: 'sans-serif-rounded',
     mono: 'monospace',
   },
   web: {

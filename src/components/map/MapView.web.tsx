@@ -15,6 +15,54 @@ type MapViewProps = {
 };
 
 const DEFAULT_CENTER: [number, number] = [22.339347563319834, 114.15269326513197];
+const MAP_TIME_ZONE = 'Asia/Hong_Kong';
+
+function isClinicOpenNow(clinic: MappedClinic, now: Date) {
+  if (clinic.isOpen24Hours || /24\s*hours/i.test(clinic.openingHours ?? '')) return true;
+
+  const hours = clinic.openingHours ?? '';
+  const range = hours.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i);
+  if (!range) return false;
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: MAP_TIME_ZONE,
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const weekday = parts.find((part) => part.type === 'weekday')?.value;
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
+  const weekdaySchedule = /weekdays/i.test(hours);
+  if (weekdaySchedule && (weekday === 'Sat' || weekday === 'Sun')) return false;
+
+  const toMinutes = (time: string) => {
+    const match = time.match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
+    if (!match) return 0;
+    let parsedHour = Number(match[1]) % 12;
+    if (match[3].toUpperCase() === 'PM') parsedHour += 12;
+    return parsedHour * 60 + Number(match[2]);
+  };
+
+  const currentMinutes = hour * 60 + minute;
+  const opensAt = toMinutes(range[1]);
+  const closesAt = toMinutes(range[2]);
+  return closesAt < opensAt
+    ? currentMinutes >= opensAt || currentMinutes < closesAt
+    : currentMinutes >= opensAt && currentMinutes < closesAt;
+}
+
+function createClinicIcon(leaflet: typeof import('leaflet'), isOpen: boolean) {
+  const color = isOpen ? '#24a148' : '#d94b4b';
+  return leaflet.divIcon({
+    className: 'clinic-marker-icon',
+    html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:${color};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:rotate(-45deg)"></span>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 24],
+    popupAnchor: [0, -24],
+  });
+}
 
 export function MapView({
   location,
@@ -26,7 +74,7 @@ export function MapView({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<CircleMarker | null>(null);
-  const clinicMarkersRef = useRef<Marker[]>([]);
+  const clinicMarkersRef = useRef<Map<string, Marker>>(new Map());
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -59,20 +107,16 @@ export function MapView({
           attribution: '&copy; OpenStreetMap contributors',
         })
         .addTo(map);
-      const clinicIcon = leaflet.divIcon({
-        className: 'clinic-marker-icon',
-        html: '<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#d94b4b;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:rotate(-45deg)"></span>',
-        iconSize: [28, 28],
-        iconAnchor: [14, 24],
-        popupAnchor: [0, -24],
-      });
-      clinicMarkersRef.current = clinics.map((clinic) =>
-        leaflet
-          .marker([clinic.latitude, clinic.longitude], { icon: clinicIcon })
+      clinicMarkersRef.current = new Map(clinics.map((clinic) => {
+        const marker = leaflet
+          .marker([clinic.latitude, clinic.longitude], {
+            icon: createClinicIcon(leaflet, isClinicOpenNow(clinic, new Date())),
+          })
           .addTo(map)
           .bindPopup(clinic.name)
-          .on('click', () => onClinicSelect?.(clinic)),
-      );
+          .on('click', () => onClinicSelect?.(clinic));
+        return [clinic.id, marker];
+      }));
       mapRef.current = map;
       setMapReady(true);
     }
@@ -83,10 +127,25 @@ export function MapView({
       mapRef.current?.stopLocate();
       mapRef.current?.remove();
       mapRef.current = null;
-      clinicMarkersRef.current = [];
+      clinicMarkersRef.current.clear();
       setMapReady(false);
     };
   }, [clinics, onClinicSelect]);
+
+  useEffect(() => {
+    const updateClinicMarkerColors = async () => {
+      const leaflet = await import('leaflet');
+      const now = new Date();
+      clinics.forEach((clinic) => {
+        const marker = clinicMarkersRef.current.get(clinic.id);
+        marker?.setIcon(createClinicIcon(leaflet, isClinicOpenNow(clinic, now)));
+      });
+    };
+
+    void updateClinicMarkerColors();
+    const interval = setInterval(() => void updateClinicMarkerColors(), 60_000);
+    return () => clearInterval(interval);
+  }, [clinics, mapReady]);
 
   useEffect(() => {
     if (!location || !mapReady) return;

@@ -17,6 +17,11 @@ export const clinics: MappedClinic[] = [
     openingHours: 'Open daily, 9:00 AM - 9:00 PM',
     isOpen24Hours: false,
     acceptsExoticPets: true,
+    services: ['General consultation', 'Vaccinations', 'Dental care', 'Exotic pet care'],
+    fees: [
+      { service: 'Consultation', amount: 350, currency: 'HK$' },
+      { service: 'Vaccination', amount: 280, currency: 'HK$' },
+    ],
   },
   {
     id: 'central-animal-hospital',
@@ -29,6 +34,7 @@ export const clinics: MappedClinic[] = [
     openingHours: 'Open daily, 8:00 AM - 10:00 PM',
     isOpen24Hours: false,
     acceptsExoticPets: false,
+    services: ['General consultation', 'Vaccinations', 'Surgery', 'Dental care'],
   },
   {
     id: 'petcare-247',
@@ -41,6 +47,8 @@ export const clinics: MappedClinic[] = [
     openingHours: 'Open 24 hours',
     isOpen24Hours: true,
     acceptsExoticPets: false,
+    services: ['Emergency care', 'General consultation', 'Diagnostics'],
+    fees: [{ service: 'Emergency consultation', amount: 800, currency: 'HK$' }],
   },
   {
     id: 'happy-paws-veterinary-clinic',
@@ -53,5 +61,6 @@ export const clinics: MappedClinic[] = [
     openingHours: 'Open weekdays, 9:00 AM - 8:00 PM',
     isOpen24Hours: false,
     acceptsExoticPets: true,
+    services: ['General consultation', 'Vaccinations', 'Exotic pet care'],
   },
 ];
