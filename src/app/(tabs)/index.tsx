@@ -57,7 +57,7 @@ export default function SearchScreen() {
     return clinicsMatchingFilters.filter((clinic) =>
       `${clinic.name} ${clinic.address ?? ''}`.toLowerCase().includes(query),
     );
-  }, [searchText, selectedFilters]);
+  }, [clinics, searchText, selectedFilters]);
 
   return (
     <ThemedView style={styles.container}>

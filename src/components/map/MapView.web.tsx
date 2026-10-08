@@ -107,16 +107,6 @@ export function MapView({
           attribution: '&copy; OpenStreetMap contributors',
         })
         .addTo(map);
-      clinicMarkersRef.current = new Map(clinics.map((clinic) => {
-        const marker = leaflet
-          .marker([clinic.latitude, clinic.longitude], {
-            icon: createClinicIcon(leaflet, isClinicOpenNow(clinic, new Date())),
-          })
-          .addTo(map)
-          .bindPopup(clinic.name)
-          .on('click', () => onClinicSelect?.(clinic));
-        return [clinic.id, marker];
-      }));
       mapRef.current = map;
       setMapReady(true);
     }
@@ -130,7 +120,45 @@ export function MapView({
       clinicMarkersRef.current.clear();
       setMapReady(false);
     };
-  }, [clinics, onClinicSelect]);
+  }, []);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+
+    let cancelled = false;
+    async function syncClinicMarkers() {
+      const leaflet = await import('leaflet');
+      if (cancelled || !mapRef.current) return;
+
+      const visibleClinicIds = new Set(clinics.map((clinic) => clinic.id));
+      for (const [clinicId, marker] of clinicMarkersRef.current) {
+        if (!visibleClinicIds.has(clinicId)) {
+          marker.remove();
+          clinicMarkersRef.current.delete(clinicId);
+        }
+      }
+
+      for (const clinic of clinics) {
+        const icon = createClinicIcon(leaflet, isClinicOpenNow(clinic, new Date()));
+        const existingMarker = clinicMarkersRef.current.get(clinic.id);
+        const marker = existingMarker ?? leaflet.marker([clinic.latitude, clinic.longitude]).addTo(mapRef.current!);
+
+        marker
+          .setLatLng([clinic.latitude, clinic.longitude])
+          .setIcon(icon)
+          .bindPopup(clinic.name)
+          .off('click')
+          .on('click', () => onClinicSelect?.(clinic));
+
+        if (!existingMarker) clinicMarkersRef.current.set(clinic.id, marker);
+      }
+    }
+
+    void syncClinicMarkers();
+    return () => {
+      cancelled = true;
+    };
+  }, [clinics, mapReady, onClinicSelect]);
 
   useEffect(() => {
     const updateClinicMarkerColors = async () => {
