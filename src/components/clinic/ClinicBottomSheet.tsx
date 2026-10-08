@@ -1,5 +1,5 @@
-import { ChevronRight, Clock3, PawPrint, Phone, Star } from 'lucide-react-native';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { ChevronRight, Clock3, Navigation, PawPrint, Phone, Star } from 'lucide-react-native';
+import { Linking, Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -17,14 +17,14 @@ export function ClinicBottomSheet({ clinic, onClose, onOpenDetails }: ClinicBott
       <View style={styles.overlay}>
         <Pressable accessibilityLabel="Close clinic details" onPress={onClose} style={styles.backdrop} />
         {clinic && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`View details for ${clinic.name}`}
-            onPress={() => onOpenDetails(clinic.id)}
-            style={styles.sheetPressable}>
+          <View style={styles.sheetPressable}>
             <ThemedView style={styles.sheet}>
               <View style={styles.handle} />
-              <View style={styles.header}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`View details for ${clinic.name}`}
+                onPress={() => onOpenDetails(clinic.id)}
+                style={({ pressed }) => [styles.header, pressed && styles.pressed]}>
                 <View style={styles.clinicIcon}>
                   <PawPrint size={21} color="#147d72" />
                 </View>
@@ -33,14 +33,16 @@ export function ClinicBottomSheet({ clinic, onClose, onOpenDetails }: ClinicBott
                   <ThemedText style={styles.title}>{clinic.name}</ThemedText>
                 </View>
                 <ChevronRight size={21} color="#8a9994" />
-              </View>
+              </Pressable>
               <View style={styles.summary}>
                 <View style={styles.ratingPill}>
                   <Star size={15} color="#d99a18" fill="#d99a18" />
                   <ThemedText style={styles.ratingText}>
-                    {clinic.rating?.toFixed(1) ?? '—'}
+                    {typeof clinic.rating === 'number' ? clinic.rating.toFixed(1) : 'New'}
                   </ThemedText>
-                  <ThemedText style={styles.ratingCaption}>rating</ThemedText>
+                  <ThemedText style={styles.ratingCaption}>
+                    {clinic.reviewCount ? `${clinic.reviewCount} ${clinic.reviewCount === 1 ? 'review' : 'reviews'}` : 'No reviews yet'}
+                  </ThemedText>
                 </View>
                 {clinic.isOpen24Hours && (
                   <View style={styles.openPill}>
@@ -62,8 +64,29 @@ export function ClinicBottomSheet({ clinic, onClose, onOpenDetails }: ClinicBott
                   value={clinic.openingHours ?? 'Hours not available'}
                 />
               </View>
+              <View style={styles.actions}>
+                <Pressable
+                  accessibilityRole="link"
+                  disabled={typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number'}
+                  onPress={() => {
+                    if (typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number') return;
+                    const url = `https://www.google.com/maps/search/?api=1&query=${clinic.latitude},${clinic.longitude}`;
+                    void Linking.openURL(url);
+                  }}
+                  style={({ pressed }) => [styles.directionsButton, pressed && styles.pressed]}>
+                  <Navigation size={17} color="#147d72" />
+                  <ThemedText style={styles.directionsText}>Directions</ThemedText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => onOpenDetails(clinic.id)}
+                  style={({ pressed }) => [styles.detailsButton, pressed && styles.pressed]}>
+                  <ThemedText style={styles.detailsText}>Clinic details</ThemedText>
+                  <ChevronRight size={17} color="#fff" />
+                </Pressable>
+              </View>
             </ThemedView>
-          </Pressable>
+          </View>
         )}
       </View>
     </Modal>
@@ -100,6 +123,12 @@ const styles = StyleSheet.create({
   openPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: '#e8f6ec' },
   openDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#24a148' },
   openText: { color: '#257548', fontSize: 11, fontWeight: '700' },
+  actions: { flexDirection: 'row', gap: 9 },
+  directionsButton: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderColor: '#d8ebe3', borderRadius: 14, backgroundColor: '#e8f4ef' },
+  directionsText: { color: '#147d72', fontSize: 13, fontWeight: '800' },
+  detailsButton: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 14, backgroundColor: '#147d72' },
+  detailsText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  pressed: { opacity: 0.78 },
   details: { paddingHorizontal: 13, paddingVertical: 3, borderRadius: 18, backgroundColor: '#f6f9f7' },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 9 },
   detailIcon: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#e7f3ee' },

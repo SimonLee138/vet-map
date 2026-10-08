@@ -4,7 +4,10 @@ export type Clinic = {
   address?: string;
   phone?: string;
   rating?: number;
+  reviewCount?: number;
   openingHours?: string;
+  latitude?: number;
+  longitude?: number;
   isOpen24Hours?: boolean;
   acceptsExoticPets: boolean;
   services?: string[];

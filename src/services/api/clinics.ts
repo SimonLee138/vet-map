@@ -85,6 +85,7 @@ export async function searchClinics(): Promise<MappedClinic[]> {
       acceptsExoticPets: clinic.accepts_exotic_pets,
       openingHours: hourLabel,
       rating: rating?.average_rating ?? undefined,
+      reviewCount: rating?.review_count ?? 0,
       services: services.filter((row) => row.clinic_id === clinic.id).map((row) => row.name),
       fees: fees
         .filter((row) => row.clinic_id === clinic.id)
