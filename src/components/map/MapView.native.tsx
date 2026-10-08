@@ -20,16 +20,8 @@ export function MapView({
   onRelocate?: () => void;
   onClinicSelect?: (clinic: Clinic) => void;
 }) {
-  const permissionLabel =
-    permissionStatus === 'granted'
-      ? 'Location permission enabled'
-      : permissionStatus === 'denied'
-        ? 'Location permission disabled - showing default map area'
-        : 'Checking location permission...';
-
   return (
     <ThemedView style={styles.map}>
-      <ThemedText type="smallBold">{permissionLabel}</ThemedText>
       <ThemedText type="subtitle">Map preview</ThemedText>
       {clinics.map((clinic) => (
         <Pressable key={clinic.id} onPress={() => onClinicSelect?.(clinic)}>

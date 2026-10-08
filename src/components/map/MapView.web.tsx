@@ -173,18 +173,8 @@ export function MapView({
 
     mapRef.current.flyTo([clinic.latitude, clinic.longitude], 16, { duration: 1 });
   }, [clinics, mapReady, selectedClinicId]);
-
-  const permissionLabel =
-    permissionStatus === 'granted'
-      ? 'Location permission enabled'
-      : permissionStatus === 'denied'
-        ? 'Location permission disabled - showing default map area'
-        : 'Checking location permission...';
-
   return (
-    <div ref={containerRef} style={styles}>
-      <div style={statusStyles(permissionStatus)}>{permissionLabel}</div>
-    </div>
+    <div ref={containerRef} style={styles}></div>
   );
 }
 
