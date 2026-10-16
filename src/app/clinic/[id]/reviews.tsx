@@ -1,20 +1,53 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, MessageCircle, Star } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PageCanvasColor } from '@/constants/theme';
-import { clinicReviews } from '@/data/clinic-reviews';
 import { clinics } from '@/data/clinics';
+import { getClinicReviewData, type ClinicReviewData } from '@/services/api/reviews';
 
 export default function ClinicReviewsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const clinic = clinics.find((item) => item.id === id);
-  const reviews = clinicReviews.filter((review) => review.clinicId === id);
-  const average = reviews.length
-    ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length
-    : 0;
+  const [reviewData, setReviewData] = useState<ClinicReviewData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    setReviewData(null);
+
+    if (!id) {
+      setLoading(false);
+      setLoadError('Clinic id is missing.');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    getClinicReviewData(id)
+      .then((data) => {
+        if (!cancelled) setReviewData(data);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setLoadError(error instanceof Error ? error.message : 'Could not load reviews.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, retryToken]);
 
   if (!clinic) {
     return (
@@ -26,6 +59,10 @@ export default function ClinicReviewsScreen() {
       </ThemedView>
     );
   }
+
+  const reviews = reviewData?.reviews ?? [];
+  const reviewCount = reviewData?.reviewCount ?? 0;
+  const average = reviewData?.averageRating ?? 0;
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -43,13 +80,15 @@ export default function ClinicReviewsScreen() {
           <ThemedText style={styles.clinicName}>{clinic.name}</ThemedText>
           <View style={styles.ratingSummary}>
             <View style={styles.averageBlock}>
-              <ThemedText style={styles.average}>{reviews.length ? average.toFixed(1) : '—'}</ThemedText>
+              <ThemedText style={styles.average}>{reviewCount ? average.toFixed(1) : '—'}</ThemedText>
               <View style={styles.averageStars}>
                 <Stars rating={Math.round(average)} size={15} />
-                <ThemedText style={styles.reviewCount}>{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</ThemedText>
+                <ThemedText style={styles.reviewCount}>
+                  {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+                </ThemedText>
               </View>
             </View>
-            {reviews.length > 0 && (
+            {reviewCount > 0 && (
               <View style={styles.ratingBreakdown}>
                 {[5, 4, 3, 2, 1].map((score) => {
                   const count = reviews.filter((review) => review.rating === score).length;
@@ -58,7 +97,7 @@ export default function ClinicReviewsScreen() {
                       <ThemedText style={styles.ratingNumber}>{score}</ThemedText>
                       <Star size={11} color="#e5a52a" fill="#e5a52a" />
                       <View style={styles.barTrack}>
-                        <View style={[styles.barFill, { width: `${(count / reviews.length) * 100}%` }]} />
+                        <View style={[styles.barFill, { width: `${(count / reviewCount) * 100}%` }]} />
                       </View>
                     </View>
                   );
@@ -68,15 +107,10 @@ export default function ClinicReviewsScreen() {
           </View>
         </ThemedView>
 
-        <View style={styles.notice}>
-          <MessageCircle size={16} color="#6f817a" />
-          <ThemedText style={styles.noticeText}>Preview reviews — sample content until user reviews are connected.</ThemedText>
-        </View>
-
         <View style={styles.sectionHeading}>
           <View>
             <ThemedText style={styles.sectionTitle}>What pet owners say</ThemedText>
-            <ThemedText style={styles.sectionSubtitle}>Recent experiences at this clinic</ThemedText>
+            <ThemedText style={styles.sectionSubtitle}>Published reviews for this clinic</ThemedText>
           </View>
           <Pressable
             onPress={() => router.push({ pathname: '/clinic/[id]/review', params: { id: clinic.id } })}
@@ -86,7 +120,20 @@ export default function ClinicReviewsScreen() {
           </Pressable>
         </View>
 
-        {reviews.length ? (
+        {loading ? (
+          <ThemedView style={styles.emptyCard}>
+            <ThemedText style={styles.sectionSubtitle}>Loading clinic reviews…</ThemedText>
+          </ThemedView>
+        ) : loadError ? (
+          <ThemedView style={styles.emptyCard}>
+            <MessageCircle size={24} color="#147d72" />
+            <ThemedText style={styles.emptyTitle}>Reviews unavailable</ThemedText>
+            <ThemedText style={styles.sectionSubtitle}>{loadError}</ThemedText>
+            <Pressable onPress={() => setRetryToken((token) => token + 1)}>
+              <ThemedText style={styles.retryText}>Try again</ThemedText>
+            </Pressable>
+          </ThemedView>
+        ) : reviews.length > 0 ? (
           reviews.map((review) => (
             <ThemedView key={review.id} style={styles.reviewCard}>
               <View style={styles.reviewHeader}>
@@ -95,7 +142,7 @@ export default function ClinicReviewsScreen() {
                 </View>
                 <View style={styles.reviewerInfo}>
                   <ThemedText style={styles.reviewerName}>{review.reviewer}</ThemedText>
-                  <ThemedText style={styles.reviewDate}>{formatReviewDate(review.date)}</ThemedText>
+                  <ThemedText style={styles.reviewDate}>{formatReviewDate(review.createdAt)}</ThemedText>
                 </View>
                 <View style={styles.scorePill}>
                   <Star size={13} color="#d99a18" fill="#d99a18" />
@@ -128,7 +175,7 @@ function Stars({ rating, size }: { rating: number; size: number }) {
 }
 
 function formatReviewDate(date: string) {
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T12:00:00`));
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(date));
 }
 
 const styles = StyleSheet.create({
@@ -155,8 +202,6 @@ const styles = StyleSheet.create({
   ratingNumber: { width: 10, color: '#d5e8df', fontSize: 10 },
   barTrack: { flex: 1, height: 5, overflow: 'hidden', borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.17)' },
   barFill: { height: 5, borderRadius: 3, backgroundColor: '#efc666' },
-  notice: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 13, backgroundColor: '#e8efeb' },
-  noticeText: { flex: 1, color: '#687a73', fontSize: 11, lineHeight: 16 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 3 },
   sectionTitle: { color: '#1c3934', fontSize: 18, fontWeight: '800' },
   sectionSubtitle: { color: '#83918d', fontSize: 12, lineHeight: 17 },
@@ -174,6 +219,7 @@ const styles = StyleSheet.create({
   comment: { color: '#546861', fontSize: 13, lineHeight: 20 },
   emptyCard: { alignItems: 'center', gap: 9, padding: 28, borderRadius: 18, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e8eeeb' },
   emptyTitle: { color: '#1c3934', fontSize: 16, fontWeight: '800' },
+  retryText: { color: '#147d72', fontWeight: '800', padding: 8 },
   primaryButton: { paddingHorizontal: 18, paddingVertical: 11, borderRadius: 14, backgroundColor: '#147d72' },
   primaryButtonText: { color: '#fff', fontWeight: '700' },
 });

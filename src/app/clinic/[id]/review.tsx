@@ -47,8 +47,8 @@ export default function ClinicReviewScreen() {
     try {
       await submitReview({ clinicId, rating, comment: comment.trim() });
       setSubmitted(true);
-    } catch {
-      setError('Your review could not be submitted. Please try again.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Your review could not be submitted. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -59,7 +59,9 @@ export default function ClinicReviewScreen() {
       <ThemedView style={styles.centered}>
         <View style={styles.successIcon}><Check size={30} color="#fff" strokeWidth={3} /></View>
         <ThemedText style={styles.pageTitle}>Thanks for sharing!</ThemedText>
-        <ThemedText style={styles.subtitle}>Your review for {clinic.name} has been submitted.</ThemedText>
+        <ThemedText style={styles.subtitle}>
+          Your review for {clinic.name} was submitted and is awaiting moderation.
+        </ThemedText>
         <Pressable onPress={() => router.back()} style={styles.submitButton}>
           <ThemedText style={styles.submitButtonText}>Back to clinic</ThemedText>
         </Pressable>

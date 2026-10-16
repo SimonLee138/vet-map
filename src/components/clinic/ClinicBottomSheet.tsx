@@ -67,10 +67,16 @@ export function ClinicBottomSheet({ clinic, onClose, onOpenDetails }: ClinicBott
               <View style={styles.actions}>
                 <Pressable
                   accessibilityRole="link"
-                  disabled={typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number'}
+                  disabled={!clinic.name.trim() && (typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number')}
                   onPress={() => {
-                    if (typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number') return;
-                    const url = `https://www.google.com/maps/search/?api=1&query=${clinic.latitude},${clinic.longitude}`;
+                    const destination = [clinic.name.trim(), clinic.address?.trim()]
+                      .filter(Boolean)
+                      .join(', ') ||
+                      (typeof clinic.latitude === 'number' && typeof clinic.longitude === 'number'
+                        ? `${clinic.latitude},${clinic.longitude}`
+                        : null);
+                    if (!destination) return;
+                    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`;
                     void Linking.openURL(url);
                   }}
                   style={({ pressed }) => [styles.directionsButton, pressed && styles.pressed]}>

@@ -10,17 +10,49 @@ import {
   Phone,
   Star,
 } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PageCanvasColor } from '@/constants/theme';
-import { clinicReviews } from '@/data/clinic-reviews';
 import { clinics } from '@/data/clinics';
+import { getClinicReviewData } from '@/services/api/reviews';
 
 export default function ClinicDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const clinic = clinics.find((item) => item.id === id);
+  const [liveRating, setLiveRating] = useState<number | null>(null);
+  const [liveReviewCount, setLiveReviewCount] = useState(0);
+  const [ratingLoading, setRatingLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!id) {
+      setRatingLoading(false);
+      return;
+    }
+
+    setRatingLoading(true);
+    getClinicReviewData(id)
+      .then((data) => {
+        if (cancelled) return;
+        setLiveRating(data.averageRating);
+        setLiveReviewCount(data.reviewCount);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLiveRating(null);
+        setLiveReviewCount(0);
+      })
+      .finally(() => {
+        if (!cancelled) setRatingLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   if (!clinic) {
     return (
@@ -57,7 +89,11 @@ export default function ClinicDetailsScreen() {
             <View style={styles.rating}>
               <Star size={16} color="#f3c969" fill="#f3c969" />
               <ThemedText style={styles.ratingText}>
-                {clinic.rating !== undefined ? `${clinic.rating.toFixed(1)} rating` : 'Not rated'}
+                {ratingLoading
+                  ? 'Loading rating…'
+                  : liveRating !== null
+                    ? `${liveRating.toFixed(1)} rating · ${liveReviewCount} ${liveReviewCount === 1 ? 'review' : 'reviews'}`
+                    : 'No reviews yet'}
               </ThemedText>
             </View>
             {clinic.isOpen24Hours && (
@@ -74,9 +110,7 @@ export default function ClinicDetailsScreen() {
             onPress={() => router.push({ pathname: '/clinic/[id]/reviews', params: { id: clinic.id } })}
             style={({ pressed }) => [styles.reviewAction, pressed && styles.pressed]}>
             <MessageCircle size={17} color="#147d72" />
-            <ThemedText style={styles.reviewActionText}>
-              Read comments ({clinicReviews.filter((review) => review.clinicId === clinic.id).length})
-            </ThemedText>
+            <ThemedText style={styles.reviewActionText}>Read comments</ThemedText>
           </Pressable>
           <Pressable
             onPress={() => router.push({ pathname: '/clinic/[id]/review', params: { id: clinic.id } })}
@@ -97,7 +131,14 @@ export default function ClinicDetailsScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="link"
-            onPress={() => void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${clinic.latitude},${clinic.longitude}`)}
+            onPress={() => {
+              const destination = [clinic.name.trim(), clinic.address?.trim()]
+                .filter(Boolean)
+                .join(', ') || `${clinic.latitude},${clinic.longitude}`;
+              void Linking.openURL(
+                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`,
+              );
+            }}
             style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}>
             <Navigation size={18} color="#147d72" />
             <ThemedText style={styles.secondaryActionText}>Directions</ThemedText>
