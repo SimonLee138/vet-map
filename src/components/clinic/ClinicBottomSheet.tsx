@@ -67,7 +67,7 @@ export function ClinicBottomSheet({ clinic, onClose, onOpenDetails }: ClinicBott
               <View style={styles.actions}>
                 <Pressable
                   accessibilityRole="link"
-                  disabled={!clinic.name.trim() && (typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number')}
+                  disabled={!clinic.name.trim() && !clinic.address && (typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number')}
                   onPress={() => {
                     const destination = [clinic.name.trim(), clinic.address?.trim()]
                       .filter(Boolean)

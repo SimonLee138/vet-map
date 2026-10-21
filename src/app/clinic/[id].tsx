@@ -132,9 +132,10 @@ export default function ClinicDetailsScreen() {
           <Pressable
             accessibilityRole="link"
             onPress={() => {
-              const destination = [clinic.name.trim(), clinic.address?.trim()]
+              const destination = [clinic.name.trim(), clinic.district?.trim(), clinic.address?.trim()]
                 .filter(Boolean)
-                .join(', ') || `${clinic.latitude},${clinic.longitude}`;
+                .join(', ') || (typeof clinic.latitude === 'number' && typeof clinic.longitude === 'number' ? `${clinic.latitude},${clinic.longitude}` : '');
+              if (!destination) return;
               void Linking.openURL(
                 `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`,
               );
@@ -149,7 +150,9 @@ export default function ClinicDetailsScreen() {
           <InfoRow icon={<MapPin size={19} color="#147d72" />} label="Location">
             <ThemedText style={styles.infoValue}>{clinic.address ?? 'Address not available'}</ThemedText>
             <ThemedText style={styles.coordinates}>
-              {clinic.latitude.toFixed(5)}, {clinic.longitude.toFixed(5)}
+              {typeof clinic.latitude === 'number' && typeof clinic.longitude === 'number'
+                ? `${clinic.latitude.toFixed(5)}, ${clinic.longitude.toFixed(5)}`
+                : 'Coordinates not available'}
             </ThemedText>
           </InfoRow>
           <View style={styles.divider} />

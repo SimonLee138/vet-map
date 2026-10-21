@@ -55,7 +55,9 @@ export default function SearchScreen() {
 
     if (!query) return clinicsMatchingFilters;
     return clinicsMatchingFilters.filter((clinic) =>
-      `${clinic.name} ${clinic.address ?? ''}`.toLowerCase().includes(query),
+      `${clinic.name} ${clinic.nameZh ?? ''} ${clinic.district ?? ''} ${clinic.address ?? ''} ${clinic.specialization ?? ''}`
+        .toLowerCase()
+        .includes(query),
     );
   }, [clinics, searchText, selectedFilters]);
 
@@ -124,8 +126,9 @@ export default function SearchScreen() {
                   }}
                   style={({ pressed }) => [styles.dropdownItem, pressed && styles.pressed]}>
                   <ThemedText>{clinic.name}</ThemedText>
+                  {clinic.nameZh ? <ThemedText type="small">{clinic.nameZh}</ThemedText> : null}
                   <ThemedText type="small" themeColor="textSecondary">
-                    {clinic.address}
+                    {[clinic.district, clinic.address].filter(Boolean).join(' · ')}
                   </ThemedText>
                 </Pressable>
               ))

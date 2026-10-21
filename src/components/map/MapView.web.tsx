@@ -139,6 +139,12 @@ export function MapView({
       }
 
       for (const clinic of clinics) {
+        if (typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number') {
+          clinicMarkersRef.current.get(clinic.id)?.remove();
+          clinicMarkersRef.current.delete(clinic.id);
+          continue;
+        }
+
         const icon = createClinicIcon(leaflet, isClinicOpenNow(clinic, new Date()));
         const existingMarker = clinicMarkersRef.current.get(clinic.id);
         const marker = existingMarker ?? leaflet.marker([clinic.latitude, clinic.longitude]).addTo(mapRef.current!);
@@ -197,7 +203,7 @@ export function MapView({
   useEffect(() => {
     if (!selectedClinicId || !mapReady || !mapRef.current) return;
     const clinic = clinics.find((item) => item.id === selectedClinicId);
-    if (!clinic) return;
+    if (!clinic || typeof clinic.latitude !== 'number' || typeof clinic.longitude !== 'number') return;
 
     mapRef.current.flyTo([clinic.latitude, clinic.longitude], 16, { duration: 1 });
   }, [clinics, mapReady, selectedClinicId]);

@@ -4,12 +4,16 @@ import { supabase } from '@/services/supabase';
 type ClinicRow = {
   id: string;
   name: string;
+  name_zh: string | null;
+  district: string | null;
   address: string | null;
   phone: string | null;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   is_open_24_hours: boolean;
   accepts_exotic_pets: boolean;
+  operating_hours_info: string | null;
+  specialization: string | null;
 };
 
 type ServiceRow = { clinic_id: string; name: string };
@@ -32,7 +36,7 @@ export async function searchClinics(): Promise<MappedClinic[]> {
 
   const { data: clinicData, error: clinicError } = await supabase
     .from('clinics')
-    .select('id, name, address, phone, latitude, longitude, is_open_24_hours, accepts_exotic_pets')
+    .select('id, name, name_zh, district, address, phone, latitude, longitude, is_open_24_hours, accepts_exotic_pets, operating_hours_info, specialization')
     .eq('is_active', true)
     .order('name');
 
@@ -77,14 +81,18 @@ export async function searchClinics(): Promise<MappedClinic[]> {
     return {
       id: clinic.id,
       name: clinic.name,
+      nameZh: clinic.name_zh ?? undefined,
+      district: clinic.district ?? undefined,
       address: clinic.address ?? undefined,
       phone: clinic.phone ?? undefined,
-      latitude: Number(clinic.latitude),
-      longitude: Number(clinic.longitude),
+      latitude: clinic.latitude == null ? null : Number(clinic.latitude),
+      longitude: clinic.longitude == null ? null : Number(clinic.longitude),
       isOpen24Hours: clinic.is_open_24_hours,
       acceptsExoticPets: clinic.accepts_exotic_pets,
-      openingHours: hourLabel,
+      operatingHoursInfo: clinic.operating_hours_info ?? undefined,
+      openingHours: clinic.operating_hours_info ?? hourLabel,
       rating: rating?.average_rating ?? undefined,
+      specialization: clinic.specialization ?? undefined,
       reviewCount: rating?.review_count ?? 0,
       services: services.filter((row) => row.clinic_id === clinic.id).map((row) => row.name),
       fees: fees

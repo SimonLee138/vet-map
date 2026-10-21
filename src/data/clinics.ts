@@ -1,8 +1,8 @@
 import type { Clinic } from '@/types/clinic';
 
 export type MappedClinic = Clinic & {
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export const clinics: MappedClinic[] = [
