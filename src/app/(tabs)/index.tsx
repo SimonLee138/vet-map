@@ -207,7 +207,7 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, gap: 14, paddingHorizontal: 22, paddingTop: 20, paddingBottom: 12, position: 'relative', backgroundColor: PageCanvasColor },
+  container: { flex: 1, gap: 14, paddingHorizontal: 22, paddingTop: 20, paddingBottom: 84, position: 'relative', backgroundColor: PageCanvasColor },
   dismissLayer: { ...StyleSheet.absoluteFill, zIndex: 1 },
   pageHeader: { gap: 5 },
   eyebrow: { color: '#147d72', fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
