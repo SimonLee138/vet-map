@@ -16,25 +16,26 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PageCanvasColor } from '@/constants/theme';
-import { clinics } from '@/data/clinics';
+import { useClinic } from '@/hooks/useClinic';
 import { getClinicReviewData } from '@/services/api/reviews';
 
 export default function ClinicDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const clinic = clinics.find((item) => item.id === id);
+  const clinicId = Array.isArray(id) ? id[0] : id;
+  const { clinic, isLoading: clinicLoading, error: clinicError } = useClinic(clinicId);
   const [liveRating, setLiveRating] = useState<number | null>(null);
   const [liveReviewCount, setLiveReviewCount] = useState(0);
   const [ratingLoading, setRatingLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    if (!id) {
+    if (!clinicId) {
       setRatingLoading(false);
       return;
     }
 
     setRatingLoading(true);
-    getClinicReviewData(id)
+    getClinicReviewData(clinicId)
       .then((data) => {
         if (cancelled) return;
         setLiveRating(data.averageRating);
@@ -52,13 +53,22 @@ export default function ClinicDetailsScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [clinicId]);
+
+  if (clinicLoading) {
+    return (
+      <ThemedView style={styles.notFound}>
+        <ThemedText themeColor="textSecondary">Loading clinic…</ThemedText>
+      </ThemedView>
+    );
+  }
 
   if (!clinic) {
     return (
       <ThemedView style={styles.notFound}>
         <View style={styles.notFoundIcon}><MapPin size={24} color="#147d72" /></View>
-        <ThemedText style={styles.notFoundTitle}>Clinic not found</ThemedText>
+        <ThemedText style={styles.notFoundTitle}>{clinicError ? 'Could not load clinic' : 'Clinic not found'}</ThemedText>
+        {clinicError ? <ThemedText themeColor="textSecondary">{clinicError}</ThemedText> : null}
         <Pressable onPress={() => router.back()} style={styles.secondaryButton}>
           <ThemedText style={styles.secondaryButtonText}>Go back</ThemedText>
         </Pressable>

@@ -6,31 +6,41 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PageCanvasColor } from '@/constants/theme';
-import { clinics } from '@/data/clinics';
+import { useClinic } from '@/hooks/useClinic';
 import { submitReview } from '@/services/api/reviews';
 
 const MAX_COMMENT_LENGTH = 1000;
 
 export default function ClinicReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const clinic = clinics.find((item) => item.id === id);
+  const clinicId = Array.isArray(id) ? id[0] : id;
+  const { clinic, isLoading: clinicLoading, error: clinicError } = useClinic(clinicId);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  if (clinicLoading) {
+    return (
+      <ThemedView style={styles.centered}>
+        <ThemedText themeColor="textSecondary">Loading clinic…</ThemedText>
+      </ThemedView>
+    );
+  }
+
   if (!clinic) {
     return (
       <ThemedView style={styles.centered}>
-        <ThemedText style={styles.pageTitle}>Clinic not found</ThemedText>
+        <ThemedText style={styles.pageTitle}>{clinicError ? 'Could not load clinic' : 'Clinic not found'}</ThemedText>
+        {clinicError ? <ThemedText themeColor="textSecondary">{clinicError}</ThemedText> : null}
         <Pressable onPress={() => router.back()} style={styles.secondaryButton}>
           <ThemedText style={styles.secondaryButtonText}>Go back</ThemedText>
         </Pressable>
       </ThemedView>
     );
   }
-  const clinicId = clinic.id;
+  const selectedClinicId = clinic.id;
 
   async function handleSubmit() {
     if (rating === 0) {
@@ -45,7 +55,7 @@ export default function ClinicReviewScreen() {
     setError('');
     setIsSubmitting(true);
     try {
-      await submitReview({ clinicId, rating, comment: comment.trim() });
+      await submitReview({ clinicId: selectedClinicId, rating, comment: comment.trim() });
       setSubmitted(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Your review could not be submitted. Please try again.');

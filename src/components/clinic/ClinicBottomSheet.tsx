@@ -53,7 +53,23 @@ export function ClinicBottomSheet({ clinic, onClose, onOpenDetails }: ClinicBott
               </View>
               <View style={styles.details}>
                 <DetailRow
-                  icon={<Phone size={17} color="#147d72" />}
+                  icon={(
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={clinic.phone ? `Call ${clinic.name} at ${clinic.phone}` : 'Phone number unavailable'}
+                      disabled={!clinic.phone}
+                      onPress={() => {
+                        if (clinic.phone) void Linking.openURL(`tel:${clinic.phone.replace(/[^\d+]/g, '')}`);
+                      }}
+                      style={({ pressed }) => [styles.phoneIconButton, pressed && styles.pressed, !clinic.phone && styles.disabledPhoneIcon]}>
+                      <Phone
+                        size={18}
+                        color={clinic.phone ? '#147d72' : '#9aa8a2'}
+                        fill={clinic.phone ? '#147d72' : '#9aa8a2'}
+                        strokeWidth={1.5}
+                      />
+                    </Pressable>
+                  )}
                   label="Phone"
                   value={clinic.phone ?? 'Not available'}
                 />
@@ -137,9 +153,11 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.78 },
   details: { paddingHorizontal: 13, paddingVertical: 3, borderRadius: 18, backgroundColor: '#f6f9f7' },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 9 },
-  detailIcon: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#e7f3ee' },
+  detailIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#e7f3ee' },
+  phoneIconButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#d9f2e4', borderWidth: 1, borderColor: '#a9dfbd' },
+  disabledPhoneIcon: { backgroundColor: '#eef2ef', borderColor: '#e2e8e4' },
   detailCopy: { flex: 1, gap: 2 },
   detailLabel: { color: '#84928d', fontSize: 10, fontWeight: '700' },
   detailValue: { color: '#263e38', fontSize: 13, fontWeight: '600' },
-  divider: { height: 1, marginLeft: 43, backgroundColor: '#e8eeeb' },
+  divider: { height: 1, marginLeft: 51, backgroundColor: '#e8eeeb' },
 });
