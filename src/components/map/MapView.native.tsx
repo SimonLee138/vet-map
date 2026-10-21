@@ -1,10 +1,11 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import type { MappedClinic } from '@/data/clinics';
 import type { Coordinates, PermissionStatus } from '@/hooks/useLocation';
 import type { Clinic } from '@/types/clinic';
+import { getClinicMapCategory, getClinicMapCategoryColor } from '@/utils/clinic-map-category';
 
 export function MapView({
   location,
@@ -24,7 +25,8 @@ export function MapView({
     <ThemedView style={styles.map}>
       <ThemedText type="subtitle">Map preview</ThemedText>
       {clinics.map((clinic) => (
-        <Pressable key={clinic.id} onPress={() => onClinicSelect?.(clinic)}>
+        <Pressable key={clinic.id} onPress={() => onClinicSelect?.(clinic)} style={styles.clinicRow}>
+          <View style={[styles.markerDot, { backgroundColor: getClinicMapCategoryColor(getClinicMapCategory(clinic)) }]} />
           <ThemedText type="smallBold">{clinic.name}</ThemedText>
         </Pressable>
       ))}
@@ -39,4 +41,6 @@ export function MapView({
 
 const styles = StyleSheet.create({
   map: { flex: 1, minHeight: 360, justifyContent: 'center', alignItems: 'center', gap: 8 },
+  clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  markerDot: { width: 10, height: 10, borderRadius: 5 },
 });

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MappedClinic } from '@/data/clinics';
 import type { Coordinates, PermissionStatus } from '@/hooks/useLocation';
 import type { Clinic } from '@/types/clinic';
+import { getClinicMapCategory, getClinicMapCategoryColor } from '@/utils/clinic-map-category';
 
 type MapViewProps = {
   location: Coordinates | null;
@@ -15,46 +16,8 @@ type MapViewProps = {
 };
 
 const DEFAULT_CENTER: [number, number] = [22.339347563319834, 114.15269326513197];
-const MAP_TIME_ZONE = 'Asia/Hong_Kong';
-
-function isClinicOpenNow(clinic: MappedClinic, now: Date) {
-  if (clinic.isOpen24Hours || /24\s*hours/i.test(clinic.openingHours ?? '')) return true;
-
-  const hours = clinic.openingHours ?? '';
-  const range = hours.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i);
-  if (!range) return false;
-
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: MAP_TIME_ZONE,
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now);
-  const weekday = parts.find((part) => part.type === 'weekday')?.value;
-  const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0);
-  const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
-  const weekdaySchedule = /weekdays/i.test(hours);
-  if (weekdaySchedule && (weekday === 'Sat' || weekday === 'Sun')) return false;
-
-  const toMinutes = (time: string) => {
-    const match = time.match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
-    if (!match) return 0;
-    let parsedHour = Number(match[1]) % 12;
-    if (match[3].toUpperCase() === 'PM') parsedHour += 12;
-    return parsedHour * 60 + Number(match[2]);
-  };
-
-  const currentMinutes = hour * 60 + minute;
-  const opensAt = toMinutes(range[1]);
-  const closesAt = toMinutes(range[2]);
-  return closesAt < opensAt
-    ? currentMinutes >= opensAt || currentMinutes < closesAt
-    : currentMinutes >= opensAt && currentMinutes < closesAt;
-}
-
-function createClinicIcon(leaflet: typeof import('leaflet'), isOpen: boolean) {
-  const color = isOpen ? '#24a148' : '#d94b4b';
+function createClinicIcon(leaflet: typeof import('leaflet'), clinic: MappedClinic) {
+  const color = getClinicMapCategoryColor(getClinicMapCategory(clinic));
   return leaflet.divIcon({
     className: 'clinic-marker-icon',
     html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:${color};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:rotate(-45deg)"></span>`,
@@ -145,7 +108,7 @@ export function MapView({
           continue;
         }
 
-        const icon = createClinicIcon(leaflet, isClinicOpenNow(clinic, new Date()));
+        const icon = createClinicIcon(leaflet, clinic);
         const existingMarker = clinicMarkersRef.current.get(clinic.id);
         const marker = existingMarker ?? leaflet.marker([clinic.latitude, clinic.longitude]).addTo(mapRef.current!);
 
@@ -165,21 +128,6 @@ export function MapView({
       cancelled = true;
     };
   }, [clinics, mapReady, onClinicSelect]);
-
-  useEffect(() => {
-    const updateClinicMarkerColors = async () => {
-      const leaflet = await import('leaflet');
-      const now = new Date();
-      clinics.forEach((clinic) => {
-        const marker = clinicMarkersRef.current.get(clinic.id);
-        marker?.setIcon(createClinicIcon(leaflet, isClinicOpenNow(clinic, now)));
-      });
-    };
-
-    void updateClinicMarkerColors();
-    const interval = setInterval(() => void updateClinicMarkerColors(), 60_000);
-    return () => clearInterval(interval);
-  }, [clinics, mapReady]);
 
   useEffect(() => {
     if (!location || !mapReady) return;

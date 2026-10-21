@@ -23,7 +23,7 @@ export default function SearchScreen() {
   const [searchText, setSearchText] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const filterOptions = ['24 hours', 'Open now', 'Exotic animals'];
+  const filterOptions = ['24 hours', 'Exotic animals'];
   const loadClinics = useCallback(async () => {
     setClinicsLoading(true);
     setClinicsError(null);
@@ -46,9 +46,6 @@ export default function SearchScreen() {
       ? clinics
       : clinics.filter((clinic) => selectedFilters.every((filter) => {
           if (filter === '24 hours') return clinic.isOpen24Hours === true;
-          if (filter === 'Open now') {
-            return clinic.isOpen24Hours === true || clinic.openingHours?.includes('Open') === true;
-          }
           if (filter === 'Exotic animals') return clinic.acceptsExoticPets;
           return true;
         }));
@@ -162,12 +159,20 @@ export default function SearchScreen() {
         </View>
         <View style={styles.legend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, styles.openDot]} />
-            <ThemedText style={styles.legendText}>Open</ThemedText>
+            <View style={[styles.legendDot, styles.generalDot]} />
+            <ThemedText style={styles.legendText}>General</ThemedText>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, styles.closedDot]} />
-            <ThemedText style={styles.legendText}>Closed</ThemedText>
+            <View style={[styles.legendDot, styles.emergencyDot]} />
+            <ThemedText style={styles.legendText}>24 hours</ThemedText>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, styles.exoticDot]} />
+            <ThemedText style={styles.legendText}>Exotic</ThemedText>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, styles.combinedDot]} />
+            <ThemedText style={styles.legendText}>Both</ThemedText>
           </View>
         </View>
       </View>
@@ -266,11 +271,13 @@ const styles = StyleSheet.create({
   mapSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 1 },
   sectionEyebrow: { color: '#6d807b', fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
   matchText: { color: '#294541', fontSize: 13, fontWeight: '600' },
-  legend: { flexDirection: 'row', gap: 10 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', columnGap: 8, rowGap: 4, flexShrink: 1 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 7, height: 7, borderRadius: 4 },
-  openDot: { backgroundColor: '#24a148' },
-  closedDot: { backgroundColor: '#d94b4b' },
+  generalDot: { backgroundColor: '#147d72' },
+  emergencyDot: { backgroundColor: '#7c3aed' },
+  exoticDot: { backgroundColor: '#d97706' },
+  combinedDot: { backgroundColor: '#176b87' },
   legendText: { color: '#788985', fontSize: 11 },
   mapContainer: { flex: 1, minHeight: 280, overflow: 'hidden', borderRadius: 20, borderWidth: 1, borderColor: '#e3ebe8', backgroundColor: '#eaf1ee', shadowColor: '#163f38', shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
 });
